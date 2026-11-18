@@ -28,6 +28,10 @@
 <div id="ready-banner">READY TO SHIP</div>
 
 <footer>
+  <div id="blocked-panel" style="display:none; border:1px solid #b3261e; border-radius:8px; padding:0.75rem 1rem; margin-bottom:1.5rem;">
+    <h2 style="color:#b3261e; margin-top:0;">Latest blocked deploy</h2>
+    <p id="blocked-body"></p>
+  </div>
   <h2>Verification history</h2>
   <ul id="history"><li>No verification runs yet.</li></ul>
 </footer>
@@ -73,6 +77,26 @@ document.getElementById('add-item').addEventListener('click', function () {
 fetch('history.json').then(function (r) { return r.json(); }).then(function (data) {
   var h = document.getElementById('history');
   if (!data.runs || data.runs.length === 0) return;
+  var fails = data.runs.filter(function (run) { return run.result === 'fail'; });
+  if (fails.length > 0) {
+    var last = fails[fails.length - 1];
+    var body = document.getElementById('blocked-body');
+    body.textContent = last.timestamp + ' — Kane refused this deploy: ' + (last.note || '');
+    if (last.annotation) {
+      var ann = document.createElement('div');
+      ann.textContent = last.annotation;
+      body.appendChild(ann);
+    }
+    if (last.testUrl) {
+      var linkWrap = document.createElement('div');
+      var a = document.createElement('a');
+      a.href = last.testUrl;
+      a.textContent = 'Kane\u2019s run report (Test Manager)';
+      linkWrap.appendChild(a);
+      body.appendChild(linkWrap);
+    }
+    document.getElementById('blocked-panel').style.display = 'block';
+  }
   h.innerHTML = '';
   data.runs.forEach(function (run) {
     var li = document.createElement('li');
