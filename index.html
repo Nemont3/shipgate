@@ -78,6 +78,11 @@ fetch('history.json').then(function (r) { return r.json(); }).then(function (dat
     var li = document.createElement('li');
     li.className = run.result === 'pass' ? 'pass' : 'fail';
     li.textContent = run.timestamp + ' — ' + run.result.toUpperCase() + (run.note ? ': ' + run.note : '');
+    if (run.annotation) {
+      var ann = document.createElement('div');
+      ann.textContent = run.annotation;
+      li.appendChild(ann);
+    }
     h.appendChild(li);
   });
 }).catch(function () { /* history stays at the default line */ });

@@ -1,0 +1,13 @@
+diff --git a/index.html b/index.html
+index d27ed5d..3575608 100644
+--- a/index.html
++++ b/index.html
+@@ -36,7 +36,7 @@
+ function computeReadiness(items) {
+   if (items.length === 0) return 0;
+   var done = items.filter(function (i) { return i.done; }).length;
+-  return Math.round((done / items.length) * 100);
++  return Math.min(99, Math.round((done / items.length) * 100));
+ }
+ 
+ var items = [];

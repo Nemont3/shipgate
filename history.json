@@ -21,6 +21,7 @@
       "result": "fail",
       "exitCode": 1,
       "note": "The run did not meet the release-ready check because the agent clicked an already checked checklist item again.",
+      "annotation": "Authors' annotation (Kane's text above is verbatim; the result is unchanged): Kane's summary blames a re-click, but its own step trace shows each box clicked once, then the check that readiness shows 100% failing. That failure is the planted bug: readiness was capped at 99% (see planted-bug.patch). The gate acts on Kane's exit code, not on its summary.",
       "testUrl": "https://test-manager.lambdatest.com/projects/01M7QFHXAPEQH6WWREJZC35QEM/test-cases/01M7QGRCYR9EF2RTV14Z6GPMG8/dashboard/share/US_ANAJWBXOOWQMRTIJ8KSIE3RXAY0E09LJ793D9VGM29R1E8PWQS76KWV6VNBJ94HW?type=summary&agentView=true&fqdn=summary-page",
       "credits": 23.11
     },
