@@ -40,7 +40,7 @@
 function computeReadiness(items) {
   if (items.length === 0) return 0;
   var done = items.filter(function (i) { return i.done; }).length;
-  return Math.min(99, Math.round((done / items.length) * 100));
+  return Math.round((done / items.length) * 100);
 }
 
 var items = [];
