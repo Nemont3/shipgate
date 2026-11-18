@@ -77,7 +77,11 @@ if (process.argv.includes('--deploy')) {
     c.on('error', () => resolve(1));
   });
   await git(['add', 'index.html', 'history.json', 'README.md', 'gate.mjs']);
-  await git(['commit', '-m', `ShipGate: verified pass ${new Date().toISOString()}`]);
+  const commitCode = await git(['commit', '-m', `ShipGate: verified pass ${new Date().toISOString()}`]);
+  if (commitCode !== 0) {
+    console.log('GATE: verified, but the local commit failed, so nothing is ready to deploy. See the git output above.');
+    process.exit(4);
+  }
   const pushCode = await git(['push']);
   if (pushCode === 0) {
     console.log('GATE: deployed (committed and pushed; GitHub Pages serves the repo).');
