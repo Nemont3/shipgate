@@ -108,16 +108,34 @@ function gitStatusPorcelain() {
   });
 }
 
+// Diff of one file the agent created, against nothing. `git diff` against a
+// snapshot never shows untracked files, so without this an agent could add a
+// whole new file and the recorded diff would show only the line that loads
+// it. Exit code 1 from --no-index just means "differs"; stdout is the diff.
+function gitNewFileDiff(file) {
+  return new Promise(resolve => {
+    execFile('git', ['diff', '--no-index', '--', '/dev/null', file], (err, stdout) => {
+      resolve((stdout || '').trimEnd());
+    });
+  });
+}
+
 // The agent's unified diff against the tree as it found it, capped so
 // history.json stays readable. This is the reviewable evidence for the fix:
 // the gate verifies behaviour, and the diff is where intent gets checked.
-function gitDiffSince(ref) {
+function gitDiffSince(ref, untrackedBefore, untrackedAfter) {
   return new Promise(resolve => {
-    execFile('git', ['diff', ref], (err, stdout) => {
-      if (err || !stdout) return resolve('');
-      const lines = stdout.split('\n');
+    execFile('git', ['diff', ref], async (err, stdout) => {
+      let text = err ? '' : (stdout || '').trimEnd();
+      const newFiles = [...untrackedAfter].filter(f => !untrackedBefore.has(f));
+      for (const f of newFiles) {
+        const nd = await gitNewFileDiff(f);
+        if (nd) text = text ? text + '\n' + nd : nd;
+      }
+      if (!text) return resolve('');
+      const lines = text.split('\n');
       const MAX = 60;
-      resolve(lines.length > MAX ? lines.slice(0, MAX).join('\n') + `\n… diff truncated (${lines.length - MAX} more lines)` : stdout.trimEnd());
+      resolve(lines.length > MAX ? lines.slice(0, MAX).join('\n') + `\n… diff truncated (${lines.length - MAX} more lines)` : text);
     });
   });
 }
@@ -250,7 +268,11 @@ for (;;) {
   const changedFiles = await gitChangedFilesSince(snapshotRef, untrackedBefore, untrackedAfter);
   let diffLines = await gitChangedLinesSince(snapshotRef);
   for (const f of untrackedAfter) if (!untrackedBefore.has(f)) diffLines += 1;
-  const agentRun = { command: AGENT_CMD_EFFECTIVE, exitCode: agentCode, files: changedFiles, lines: diffLines, diff: await gitDiffSince(snapshotRef) };
+  // Record the command as configured, not as executed: {failure} stays
+  // unexpanded and repo-local paths stay relative, so the public history
+  // carries no machine-specific paths. The executed command is unchanged.
+  const recordedCommand = AGENT_CMD.replaceAll(process.cwd() + '/', '');
+  const agentRun = { command: recordedCommand, exitCode: agentCode, files: changedFiles, lines: diffLines, diff: await gitDiffSince(snapshotRef, untrackedBefore, untrackedAfter) };
   if (agentCode !== 0) {
     console.log(`GATE: agent exited ${agentCode}. Stopping the loop; nothing deployed.`);
     server.close();
