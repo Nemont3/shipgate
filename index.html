@@ -107,6 +107,11 @@ fetch('history.json').then(function (r) { return r.json(); }).then(function (dat
       ann.textContent = run.annotation;
       li.appendChild(ann);
     }
+    if (run.agentRun) {
+      var ar = document.createElement('div');
+      ar.textContent = 'Agent fix before this run: ' + run.agentRun.command + ' — changed ' + run.agentRun.files.join(', ') + ' (' + run.agentRun.lines + ' lines), exit ' + run.agentRun.exitCode + '.';
+      li.appendChild(ar);
+    }
     h.appendChild(li);
   });
 }).catch(function () { /* history stays at the default line */ });

@@ -26,6 +26,26 @@ node gate.mjs            # verify only
 node gate.mjs --deploy   # verify, and ship if Kane passes
 ```
 
+## Closing the loop
+
+Give the gate your own local coding agent and it drives the fix itself:
+
+```sh
+node gate.mjs --deploy --agent 'claude -p "Read {failure} and fix the app so the flow passes. Keep the change minimal."'
+```
+
+On a Kane failure the gate writes `KANE_FAILURE.md`, invokes your agent with that report
+(`{failure}` in the command is replaced with the report's path; the path is also in
+`SHIPGATE_FAILURE_FILE`), then re-runs Kane. Bounds: `--max-attempts` (default 1),
+`--max-diff` (default 400 changed lines), a 10-minute agent timeout, and `--dry-run` to
+print the invocation without running it. The agent's diff is measured against the tree as
+the agent found it, and it may never touch the gate itself, `history.json`,
+`KANE_FAILURE.md`, or `planted-bug.patch`: an agent that edits the check has its fix
+rejected, the tree restored, and the refusal recorded in the history. With `--agent` or
+`--deploy` the working tree must start clean. Every attempt is logged in `history.json`
+with the agent's command, the files it changed, and its exit code, and the shipped page
+renders those attempts alongside Kane's runs.
+
 (The CLI also accepts `LT_USERNAME` / `LT_ACCESS_KEY` environment variables if you prefer
 key-based auth.)
 
