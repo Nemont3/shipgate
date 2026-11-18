@@ -43,8 +43,10 @@ the agent found it, and it may never touch the gate itself, `history.json`,
 `KANE_FAILURE.md`, or `planted-bug.patch`: an agent that edits the check has its fix
 rejected, the tree restored, and the refusal recorded in the history. With `--agent` or
 `--deploy` the working tree must start clean. Every attempt is logged in `history.json`
-with the agent's command, the files it changed, and its exit code, and the shipped page
-renders those attempts alongside Kane's runs.
+with the agent's command, the files it changed, its exit code, and its diff, and the
+shipped page renders those attempts alongside Kane's runs. One limit, named plainly:
+ShipGate verifies behaviour, not intent — an agent could fake the app instead of fixing
+it, and only the diff it shows you would tell. Review the agent's diff.
 
 (The CLI also accepts `LT_USERNAME` / `LT_ACCESS_KEY` environment variables if you prefer
 key-based auth.)

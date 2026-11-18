@@ -108,6 +108,20 @@ function gitStatusPorcelain() {
   });
 }
 
+// The agent's unified diff against the tree as it found it, capped so
+// history.json stays readable. This is the reviewable evidence for the fix:
+// the gate verifies behaviour, and the diff is where intent gets checked.
+function gitDiffSince(ref) {
+  return new Promise(resolve => {
+    execFile('git', ['diff', ref], (err, stdout) => {
+      if (err || !stdout) return resolve('');
+      const lines = stdout.split('\n');
+      const MAX = 60;
+      resolve(lines.length > MAX ? lines.slice(0, MAX).join('\n') + `\n… diff truncated (${lines.length - MAX} more lines)` : stdout.trimEnd());
+    });
+  });
+}
+
 function gitChangedFilesSince(ref, untrackedBefore, untrackedAfter) {
   return new Promise(resolve => {
     execFile('git', ['diff', ref, '--name-only'], (err, stdout) => {
@@ -236,7 +250,7 @@ for (;;) {
   const changedFiles = await gitChangedFilesSince(snapshotRef, untrackedBefore, untrackedAfter);
   let diffLines = await gitChangedLinesSince(snapshotRef);
   for (const f of untrackedAfter) if (!untrackedBefore.has(f)) diffLines += 1;
-  const agentRun = { command: AGENT_CMD_EFFECTIVE, exitCode: agentCode, files: changedFiles, lines: diffLines };
+  const agentRun = { command: AGENT_CMD_EFFECTIVE, exitCode: agentCode, files: changedFiles, lines: diffLines, diff: await gitDiffSince(snapshotRef) };
   if (agentCode !== 0) {
     console.log(`GATE: agent exited ${agentCode}. Stopping the loop; nothing deployed.`);
     server.close();

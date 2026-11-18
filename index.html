@@ -111,6 +111,16 @@ fetch('history.json').then(function (r) { return r.json(); }).then(function (dat
       var ar = document.createElement('div');
       ar.textContent = 'Agent fix before this run: ' + run.agentRun.command + ' — changed ' + run.agentRun.files.join(', ') + ' (' + run.agentRun.lines + ' lines), exit ' + run.agentRun.exitCode + '.';
       li.appendChild(ar);
+      if (run.agentRun.diff) {
+        var det = document.createElement('details');
+        var sum = document.createElement('summary');
+        sum.textContent = 'Review the agent\u2019s diff';
+        var pre = document.createElement('pre');
+        pre.textContent = run.agentRun.diff;
+        det.appendChild(sum);
+        det.appendChild(pre);
+        li.appendChild(det);
+      }
     }
     h.appendChild(li);
   });
