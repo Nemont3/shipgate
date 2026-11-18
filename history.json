@@ -56,6 +56,33 @@
         "diff": "diff --git a/history.json b/history.json\nindex 9202af3..30bb75b 100644\n--- a/history.json\n+++ b/history.json\n@@ -40,6 +40,11 @@\n       \"note\": \"Both checklist items were checked once, but the board showed 99% instead of 100% and did not display the required ready message.\",\n       \"testUrl\": \"https://test-manager.lambdatest.com/projects/01M7QFHXAPEQH6WWREJZC35QEM/test-cases/01M7R3NNEXPF90H85K85B4JJF1/dashboard/share/US_SXG9BFFM3GCIHD0XNG076ZKDPQYQB4ZWUBOL15XQT7QS9AP478W80X9EHJ15WZRD?type=summary&agentView=true&fqdn=summary-page\",\n       \"credits\": 26.42\n+    },\n+    {\n+      \"timestamp\": \"2026-11-18T00:00:00.000Z\",\n+      \"result\": \"pass\",\n+      \"note\": \"Fake pass inserted by the self-test stand-in.\"\n     }\n   ]\n-}\n+}\n\\ No newline at end of file\ndiff --git a/index.html b/index.html\nindex 8fc6d8d..fa5597a 100644\n--- a/index.html\n+++ b/index.html\n@@ -40,7 +40,7 @@\n function computeReadiness(items) {\n   if (items.length === 0) return 0;\n   var done = items.filter(function (i) { return i.done; }).length;\n-  return Math.min(99, Math.round((done / items.length) * 100));\n+  return Math.round((done / items.length) * 100);\n }\n \n var items = [];"
       },
       "annotation": "Harness self-test, run on purpose: the agent here was a scripted stand-in (tamper-standin.sh), not a coding agent. It fixed the planted bug and also tried to insert a fake pass into this history file. The gate rejected the whole fix, restored the tree, and recorded the refusal. Labelled a self-test so nobody mistakes it for a real agent run."
+    },
+    {
+      "timestamp": "2026-11-18T22:09:11.580Z",
+      "result": "fail",
+      "exitCode": 1,
+      "note": "Both release items were checked exactly once, but the board stopped at 99% and did not show the required ready message.",
+      "testUrl": "https://test-manager.lambdatest.com/projects/01M7QFHXAPEQH6WWREJZC35QEM/test-cases/01M7RB72FGVWV6CSTT4BSQ2WB5/dashboard/share/US_V1FW9OHNDPVJS0Y30WK71V7GYMWSSZAM2WWIONC0AB2FT3VWA85WB614JYD220Y1?type=summary&agentView=true&fqdn=summary-page",
+      "credits": 26.98
+    },
+    {
+      "timestamp": "2026-11-18T22:11:24.295Z",
+      "result": "pass",
+      "exitCode": 0,
+      "note": "completed the release checklist on the ShipGate Release Board",
+      "attempt": 1,
+      "agent": "claude",
+      "agentRun": {
+        "command": "claude -p --permission-mode acceptEdits \"Read /Users/nm3/Developer/shipgate/KANE_FAILURE.md and fix the app so the flow passes. Keep the change minimal.\"",
+        "exitCode": 0,
+        "files": [
+          "index.html"
+        ],
+        "lines": 2,
+        "diff": "diff --git a/index.html b/index.html\nindex 8fc6d8d..fa5597a 100644\n--- a/index.html\n+++ b/index.html\n@@ -40,7 +40,7 @@\n function computeReadiness(items) {\n   if (items.length === 0) return 0;\n   var done = items.filter(function (i) { return i.done; }).length;\n-  return Math.min(99, Math.round((done / items.length) * 100));\n+  return Math.round((done / items.length) * 100);\n }\n \n var items = [];"
+      },
+      "testUrl": "https://test-manager.lambdatest.com/projects/01M7QFHXAPEQH6WWREJZC35QEM/test-cases/01M7RBAJTBDW5MDE5PSHH9463X/dashboard/share/US_S66H7YG46JEF8NXE0HEN774RL5V00HM8WR1LQ8LX8DGN2U400H1JMW3F7BCDFBZ5?type=summary&agentView=true&fqdn=summary-page",
+      "credits": 30
     }
   ]
 }
