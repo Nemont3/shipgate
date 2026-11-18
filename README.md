@@ -11,8 +11,8 @@ to 100% and a READY TO SHIP state. The real project is the gate around it:
    `KANE_FAILURE.md` and handed back to the coding agent, which fixes the app and re-runs the gate.
 3. Only a pass deploys (commit + push; GitHub Pages serves this repo). If the push fails, the
    gate says so out loud and exits without claiming a deployment.
-4. Every run, pass or fail, is appended to `history.json`, and the shipped page renders that
-   history in its footer. The failures ship with the app, on purpose.
+4. Every run on this repo's deploy line, pass or fail, is appended to `history.json`, and the
+   shipped page renders that history in its footer. The failures ship with the app, on purpose.
 
 ## Run it yourself
 
@@ -31,14 +31,18 @@ node gate.mjs --deploy   # verify, and ship if Kane passes
 Give the gate your own local coding agent and it drives the fix itself:
 
 ```sh
-node gate.mjs --deploy --agent 'claude -p "Read {failure} and fix the app so the flow passes. Keep the change minimal."'
+node gate.mjs --deploy --agent 'claude -p --permission-mode acceptEdits "Read {failure} and fix the app so the flow passes. Keep the change minimal."'
 ```
+
+The gate runs your agent unattended, so the command has to be able to edit files without
+stopping to ask: with Claude Code that is a permission mode, as in the example above.
 
 On a Kane failure the gate writes `KANE_FAILURE.md`, invokes your agent with that report
 (`{failure}` in the command is replaced with the report's path; the path is also in
 `SHIPGATE_FAILURE_FILE`), then re-runs Kane. Bounds: `--max-attempts` (default 1),
-`--max-diff` (default 400 changed lines), a 10-minute agent timeout, and `--dry-run` to
-print the invocation without running it. The agent's diff is measured against the tree as
+`--max-diff` (default 400 changed lines), a 10-minute agent timeout, and `--dry-run`,
+which still runs Kane and writes the failure report, then prints the agent invocation it
+would run and stops without invoking the agent. The agent's diff is measured against the tree as
 the agent found it, and it may never touch the gate itself, `history.json`,
 `KANE_FAILURE.md`, or `planted-bug.patch`: an agent that edits the check has its fix
 rejected, the tree restored, and the refusal recorded in the history. With `--agent` or
@@ -62,7 +66,9 @@ of its own, re-clicking a box it had already checked; that failure is in the his
 
 ## Verification history
 
-Every gate run, in order. Proof links open Kane's own run report in Test Manager.
+Every run on this repo's deploy line, in order. (The gate was also exercised during
+development on scratch copies, including scripted stand-in tests of the loop; those runs
+are not in this history.) Proof links open Kane's own run report in Test Manager.
 
 | # | Time (UTC) | Verdict | What happened | Proof |
 |---|------------|---------|---------------|-------|
