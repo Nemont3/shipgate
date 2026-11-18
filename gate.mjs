@@ -6,8 +6,9 @@ import { spawn } from 'node:child_process';
 import { extname, join } from 'node:path';
 
 const PORT = process.env.PORT || 8371;
+const APP_URL = `http://127.0.0.1:${PORT}/`;
 const OBJECTIVE = process.env.SHIPGATE_OBJECTIVE ||
-  `Go to http://localhost:${PORT}/ and do the following: in the "New release check" field type "Write release notes" and click "Add item". Then type "Tag the version" and click "Add item" again. Then check both checkboxes in the list. Finally verify that the Readiness shows 100% and that the text "READY TO SHIP" is visible on the page.`;
+  `Verify the ShipGate release board. In the "New release check" field type "Write release notes" and click "Add item". Then type "Tag the version" and click "Add item" again. There are now two unchecked items and Readiness shows 0%. Click the first item's checkbox once to check it, then click the second item's checkbox once to check it. Do not click any checkbox more than once. Finally verify that Readiness shows 100% and that the text "READY TO SHIP" is visible on the page. Report pass only if both verifications match exactly.`;
 
 const TYPES = { '.html': 'text/html', '.json': 'application/json', '.md': 'text/plain' };
 const server = createServer(async (req, res) => {
@@ -19,11 +20,11 @@ const server = createServer(async (req, res) => {
   } catch { res.writeHead(404); res.end('not found'); }
 });
 await new Promise(r => server.listen(PORT, r));
-console.log(`ShipGate app served at http://localhost:${PORT}/`);
+console.log(`ShipGate app served at ${APP_URL}`);
 
 function runKane() {
   return new Promise(resolve => {
-    const child = spawn('kane-cli', ['run', OBJECTIVE, '--headless', '--agent'], { env: process.env });
+    const child = spawn('kane-cli', ['run', OBJECTIVE, '--url', APP_URL, '--name', 'shipgate-release-verification', '--headless', '--agent'], { env: process.env });
     let out = '', err = '';
     child.stdout.on('data', d => { out += d; });
     child.stderr.on('data', d => { err += d; process.stderr.write(d); });
@@ -35,21 +36,31 @@ function runKane() {
 const { code, out } = await runKane();
 server.close();
 
-let parsed = null;
-try { parsed = JSON.parse(out.trim().split('\n').pop()); } catch { /* Kane prints one JSON object; anything else is recorded raw */ }
+// Kane's --agent mode streams NDJSON events; the run_end event carries the verdict.
+const events = out.split('\n').filter(l => l.trim().startsWith('{')).map(l => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
+const runEnd = [...events].reverse().find(e => e.type === 'run_end') || null;
+const stepRemarks = events.filter(e => e.step !== undefined && e.remark).map(e => `- Step ${e.step} [${e.status}]: ${e.remark}`);
 
-const result = code === 0 ? 'pass' : code === 1 ? 'fail' : 'error';
-const note = result === 'pass' ? 'Kane verified the release flow end to end.'
-  : result === 'fail' ? 'Kane caught a failure in the release flow. See KANE_FAILURE.md.'
+let result;
+if (runEnd && runEnd.status === 'passed') result = 'pass';
+else if (runEnd && runEnd.status === 'failed') result = 'fail';
+else result = code === 0 ? 'pass' : code === 1 ? 'fail' : 'error';
+
+const note = result === 'pass' ? (runEnd?.one_liner || 'Kane verified the release flow end to end.')
+  : result === 'fail' ? (runEnd?.one_liner || 'Kane caught a failure in the release flow. See KANE_FAILURE.md.')
   : `Kane run errored (exit ${code}).`;
 
+const entry = { timestamp: new Date().toISOString(), result, exitCode: code, note };
+if (runEnd?.test_url) entry.testUrl = runEnd.test_url;
+if (runEnd?.credits_consumed) entry.credits = Math.round(runEnd.credits_consumed * 100) / 100;
+
 const history = JSON.parse(await readFile('history.json', 'utf8'));
-history.runs.push({ timestamp: new Date().toISOString(), result, exitCode: code, note });
+history.runs.push(entry);
 await writeFile('history.json', JSON.stringify(history, null, 2) + '\n');
 
 if (result === 'fail') {
   await writeFile('KANE_FAILURE.md',
-    `# Kane failure report\n\nExit code: ${code}\n\n## Kane JSON result\n\n\`\`\`json\n${out}\n\`\`\`\n\nThe coding agent reads this file, fixes the app, and re-runs the gate.\n`);
+    `# Kane failure report\n\nWhen: ${entry.timestamp}\nExit code: ${code}\n\n## What Kane found\n\n${runEnd?.one_liner || 'Kane reported a failure.'}\n\n${runEnd?.reason ? `Reason: ${runEnd.reason}\n\n` : ''}${runEnd?.test_url ? `Full run: ${runEnd.test_url}\n\n` : ''}## Steps\n\n${stepRemarks.join('\n') || '(no step remarks captured)'}\n\nThe coding agent reads this file, fixes the app, and re-runs the gate.\n`);
   console.log('GATE: FAIL. Failure written to KANE_FAILURE.md. Nothing deployed.');
   process.exit(1);
 }
@@ -63,11 +74,17 @@ if (process.argv.includes('--deploy')) {
   const git = args => new Promise(resolve => {
     const c = spawn('git', args, { stdio: 'inherit' });
     c.on('close', resolve);
+    c.on('error', () => resolve(1));
   });
-  await git(['add', '-A']);
+  await git(['add', 'index.html', 'history.json', 'README.md', 'gate.mjs']);
   await git(['commit', '-m', `ShipGate: verified pass ${new Date().toISOString()}`]);
-  await git(['push']);
-  console.log('GATE: deployed (committed and pushed; GitHub Pages serves the repo).');
+  const pushCode = await git(['push']);
+  if (pushCode === 0) {
+    console.log('GATE: deployed (committed and pushed; GitHub Pages serves the repo).');
+  } else {
+    console.log('GATE: verified and committed locally, but the push failed, so this is NOT deployed. Push the commit to deploy.');
+    process.exit(3);
+  }
 } else {
   console.log('GATE: pass recorded in history.json. Re-run with --deploy to ship.');
 }
