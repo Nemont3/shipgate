@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShipGate Release Board</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 2rem auto; max-width: 640px; padding: 0 1rem; }
+  h1 { font-size: 1.5rem; }
+  #ready-banner { display: none; background: #137333; color: #fff; padding: 0.75rem 1rem; border-radius: 8px; font-weight: 600; }
+  #readiness { font-size: 2rem; font-weight: 700; }
+  li { margin: 0.35rem 0; }
+  footer { margin-top: 3rem; border-top: 1px solid #ccc; padding-top: 1rem; }
+  .fail { color: #b3261e; }
+  .pass { color: #137333; }
+</style>
+</head>
+<body>
+<h1>ShipGate Release Board</h1>
+<p>This app could not deploy until Kane CLI verified its flow. Its verification history is at the bottom of this page.</p>
+
+<div>
+  <input id="new-item" type="text" placeholder="New release check">
+  <button id="add-item">Add item</button>
+</div>
+<ul id="items"></ul>
+<p>Readiness: <span id="readiness">0%</span></p>
+<div id="ready-banner">READY TO SHIP</div>
+
+<footer>
+  <h2>Verification history</h2>
+  <ul id="history"><li>No verification runs yet.</li></ul>
+</footer>
+
+<script>
+function computeReadiness(items) {
+  if (items.length === 0) return 0;
+  var done = items.filter(function (i) { return i.done; }).length;
+  return Math.round((done / items.length) * 100);
+}
+
+var items = [];
+var listEl = document.getElementById('items');
+var readinessEl = document.getElementById('readiness');
+var bannerEl = document.getElementById('ready-banner');
+
+function render() {
+  listEl.innerHTML = '';
+  items.forEach(function (item, idx) {
+    var li = document.createElement('li');
+    var cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = item.done;
+    cb.addEventListener('change', function () { items[idx].done = cb.checked; render(); });
+    li.appendChild(cb);
+    li.appendChild(document.createTextNode(' ' + item.label));
+    listEl.appendChild(li);
+  });
+  var pct = computeReadiness(items);
+  readinessEl.textContent = pct + '%';
+  bannerEl.style.display = (pct === 100 && items.length > 0) ? 'block' : 'none';
+}
+
+document.getElementById('add-item').addEventListener('click', function () {
+  var input = document.getElementById('new-item');
+  var label = input.value.trim();
+  if (!label) return;
+  items.push({ label: label, done: false });
+  input.value = '';
+  render();
+});
+
+fetch('history.json').then(function (r) { return r.json(); }).then(function (data) {
+  var h = document.getElementById('history');
+  if (!data.runs || data.runs.length === 0) return;
+  h.innerHTML = '';
+  data.runs.forEach(function (run) {
+    var li = document.createElement('li');
+    li.className = run.result === 'pass' ? 'pass' : 'fail';
+    li.textContent = run.timestamp + ' — ' + run.result.toUpperCase() + (run.note ? ': ' + run.note : '');
+    h.appendChild(li);
+  });
+}).catch(function () { /* history stays at the default line */ });
+
+render();
+</script>
+</body>
+</html>
