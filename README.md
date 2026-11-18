@@ -34,7 +34,7 @@ key-based auth.)
 During development one bug was planted in the readiness math: readiness was capped at 99%, so
 the board could never reach READY TO SHIP. Kane caught it (exit 1; its step trace shows each
 box clicked once, then its final check, that readiness shows 100% and READY TO SHIP, failing),
-the fix was made from Kane's own failure report, and the re-run passed. That failure is in the
+the cap was then reverted, and the re-run passed. That failure is in the
 history on the live page, and in this repo's `history.json`. Kane's agent also flubbed one run
 of its own, re-clicking a box it had already checked; that failure is in the history too.
 
