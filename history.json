@@ -64,7 +64,7 @@
       "note": "Both release items were checked exactly once, but the board stopped at 99% and did not show the required ready message.",
       "testUrl": "https://test-manager.lambdatest.com/projects/01M7QFHXAPEQH6WWREJZC35QEM/test-cases/01M7RB72FGVWV6CSTT4BSQ2WB5/dashboard/share/US_V1FW9OHNDPVJS0Y30WK71V7GYMWSSZAM2WWIONC0AB2FT3VWA85WB614JYD220Y1?type=summary&agentView=true&fqdn=summary-page",
       "credits": 26.98,
-      "annotation": "Planted regression, labelled afterwards: commit 412b5e2 capped readiness at 99% under a deliberately neutral message, so the fixing agent could not read the answer from it. Claude Code fixed the app from Kane's failure report and that commit's diff; the re-run passed and shipped as 728f802."
+      "annotation": "Planted regression, labelled afterwards: commit 412b5e2 capped readiness at 99% under a deliberately neutral message, so the fixing agent could not read the answer from it. Claude Code fixed the app from Kane's failure report and that commit's diff. It also noticed the repo's earlier self-test commits (Claude Code loads recent commits at startup) and said the cap might be another planted test; its fix rests on the latest commit and index.html. The re-run passed and shipped as 728f802."
     },
     {
       "timestamp": "2026-11-18T22:11:24.295Z",
