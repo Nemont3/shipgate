@@ -8,7 +8,7 @@
   body { font-family: system-ui, sans-serif; margin: 2rem auto; max-width: 640px; padding: 0 1rem; }
   h1 { font-size: 1.5rem; }
   #ready-banner { display: none; background: #137333; color: #fff; padding: 0.75rem 1rem; border-radius: 8px; font-weight: 600; }
-  #readiness { font-size: 2rem; font-weight: 700; }
+  #readiness { font-size: 2.25rem; font-weight: 700; letter-spacing: 0.02em; }
   li { margin: 0.35rem 0; }
   footer { margin-top: 3rem; border-top: 1px solid #ccc; padding-top: 1rem; }
   .fail { color: #b3261e; }
@@ -40,7 +40,7 @@
 function computeReadiness(items) {
   if (items.length === 0) return 0;
   var done = items.filter(function (i) { return i.done; }).length;
-  return Math.round((done / items.length) * 100);
+  return Math.floor((done / items.length) * 100);
 }
 
 var items = [];
