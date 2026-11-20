@@ -55,7 +55,7 @@ function render() {
     var cb = document.createElement('input');
     cb.type = 'checkbox';
     cb.checked = item.done;
-    cb.addEventListener('change', function () { items[idx].done = cb.checked; if (idx > 0) items[0].done = false; render(); });
+    cb.addEventListener('change', function () { items[idx].done = cb.checked; render(); });
     li.appendChild(cb);
     li.appendChild(document.createTextNode(' ' + item.label));
     listEl.appendChild(li);

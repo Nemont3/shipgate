@@ -84,6 +84,33 @@
       },
       "testUrl": "https://test-manager.lambdatest.com/projects/01M7QFHXAPEQH6WWREJZC35QEM/test-cases/01M7RBAJTBDW5MDE5PSHH9463X/dashboard/share/US_S66H7YG46JEF8NXE0HEN774RL5V00HM8WR1LQ8LX8DGN2U400H1JMW3F7BCDFBZ5?type=summary&agentView=true&fqdn=summary-page",
       "credits": 30
+    },
+    {
+      "timestamp": "2026-11-20T15:07:21.314Z",
+      "result": "fail",
+      "exitCode": 1,
+      "note": "After each of the two release items was checked once, the board remained at 50% instead of reaching 100% and showing the ready message.",
+      "testUrl": "https://test-manager.lambdatest.com/projects/01M7QFHXAPEQH6WWREJZC35QEM/test-cases/01M7WQTDM7SJJ321SRSP4DW0DC/dashboard/share/US_GHQDGPI4TTL901EEDM9TUPIO6T7PCIIS3CNZC0RWNGPZK1E1G26LZ49Q90E8RU6L?type=summary&agentView=true&fqdn=summary-page",
+      "credits": 34.35
+    },
+    {
+      "timestamp": "2026-11-20T15:09:34.111Z",
+      "result": "pass",
+      "exitCode": 0,
+      "note": "completed the release checklist on the release board",
+      "attempt": 1,
+      "agent": "claude",
+      "agentRun": {
+        "command": "claude -p --permission-mode acceptEdits \"Read {failure} and fix the app so the flow passes. Keep the change minimal.\"",
+        "exitCode": 0,
+        "files": [
+          "index.html"
+        ],
+        "lines": 2,
+        "diff": "diff --git a/index.html b/index.html\nindex 6006c29..313f147 100644\n--- a/index.html\n+++ b/index.html\n@@ -55,7 +55,7 @@ function render() {\n     var cb = document.createElement('input');\n     cb.type = 'checkbox';\n     cb.checked = item.done;\n-    cb.addEventListener('change', function () { items[idx].done = cb.checked; if (idx > 0) items[0].done = false; render(); });\n+    cb.addEventListener('change', function () { items[idx].done = cb.checked; render(); });\n     li.appendChild(cb);\n     li.appendChild(document.createTextNode(' ' + item.label));\n     listEl.appendChild(li);"
+      },
+      "testUrl": "https://test-manager.lambdatest.com/projects/01M7QFHXAPEQH6WWREJZC35QEM/test-cases/01M7WQZMF1BG5E4QVPSNVWFRC2/dashboard/share/US_57BNQXZ4ABMNRV1CJIB0YCSK8ZQ2K0VEAEOQ9VGDVIRZ1DTOVB96T05JVTSTSU61?type=summary&agentView=true&fqdn=summary-page",
+      "credits": 28.05
     }
   ]
 }
