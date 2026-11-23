@@ -40,9 +40,11 @@ stopping to ask: with Claude Code that is a permission mode, as in the example a
 On a Kane failure the gate writes `KANE_FAILURE.md`, invokes your agent with that report
 (`{failure}` in the command is replaced with the report's path; the path is also in
 `SHIPGATE_FAILURE_FILE`), then re-runs Kane. Bounds: `--max-attempts` (default 1),
-`--max-diff` (default 400 changed lines), a 10-minute agent timeout, and `--dry-run`,
-which still runs Kane and writes the failure report, then prints the agent invocation it
-would run and stops without invoking the agent. The agent's diff is measured against the tree as
+`--max-diff` (default 400 changed lines; a new file counts its actual added
+lines toward the cap, and new files in gitignored paths count too, so the cap
+cannot be evaded by hiding a file), a 10-minute agent timeout, and `--dry-run`,
+which prints the Kane and agent invocations and exits without running either;
+it spends no credits and writes nothing. The agent's diff is measured against the tree as
 the agent found it, and it may never touch the gate itself, `history.json`,
 `KANE_FAILURE.md`, or `planted-bug.patch`: an agent that edits the check has its fix
 rejected, the tree restored, and the refusal recorded in the history. With `--agent` or

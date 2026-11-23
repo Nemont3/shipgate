@@ -96,7 +96,12 @@ function gitChangedLinesSince(ref) {
 
 function gitUntracked() {
   return new Promise(resolve => {
-    execFile('git', ['ls-files', '--others', '--exclude-standard'], (err, stdout) => {
+    // No --exclude-standard on purpose: gitignored files must NOT be invisible
+    // to the gate. A new file hidden in an ignored path still counts toward the
+    // diff cap and still shows in the recorded diff. Pre-existing ignored files
+    // appear in both the before and after snapshots, so the before/after
+    // comparison keeps them out of the agent's measured change.
+    execFile('git', ['ls-files', '--others'], (err, stdout) => {
       resolve(err ? new Set() : new Set(stdout.split('\n').filter(Boolean)));
     });
   });
@@ -118,6 +123,16 @@ function gitNewFileDiff(file) {
       resolve((stdout || '').trimEnd());
     });
   });
+}
+
+// How many lines a new file counts toward the diff cap: its added lines, from
+// the same --no-index diff the gate records (lines starting with '+', minus
+// the '+++' header). Counting a new file as a flat 1 line would let a
+// 5,000-line file pass a 400-line cap.
+async function gitNewFileLines(file) {
+  const diff = await gitNewFileDiff(file);
+  if (!diff) return 0;
+  return diff.split('\n').filter(l => l.startsWith('+') && !l.startsWith('+++')).length;
 }
 
 // The agent's unified diff against the tree as it found it, capped so
@@ -205,6 +220,25 @@ async function deploy() {
   }
 }
 
+// --dry-run is a free config check: print the Kane invocation and the agent
+// invocation exactly as they would run, then exit 0 without running either.
+// It spends no Kane credits, invokes no agent, and writes nothing (no history
+// entry, no failure report). It also skips the clean-tree refusal below, so it
+// works on any tree.
+if (DRY_RUN) {
+  console.log(`GATE: DRY RUN — would run Kane: kane-cli run "${OBJECTIVE}" --url ${APP_URL} --name shipgate-release-verification --headless --agent`);
+  if (AGENT_CMD_EFFECTIVE) {
+    console.log(`GATE: DRY RUN — on a Kane failure, would invoke agent: ${AGENT_CMD_EFFECTIVE}`);
+    console.log(`GATE: DRY RUN — with SHIPGATE_FAILURE_FILE=${resolvePath('KANE_FAILURE.md')} SHIPGATE_ATTEMPT=1, up to ${MAX_ATTEMPTS} attempt(s), diff cap ${MAX_DIFF} lines`);
+  } else {
+    console.log('GATE: DRY RUN — no --agent configured; on a Kane failure the gate would stop after writing KANE_FAILURE.md.');
+  }
+  if (argv.includes('--deploy')) console.log('GATE: DRY RUN — with --deploy, a Kane pass would commit and push.');
+  console.log('GATE: DRY RUN — nothing run, nothing written, no credits spent.');
+  server.close();
+  process.exit(0);
+}
+
 // With an agent in the loop or a deploy at stake, the tree must start clean:
 // the diff the gate measures is then the agent's alone, and `git add -A` at
 // deploy time cannot sweep in an unrelated file.
@@ -254,12 +288,6 @@ for (;;) {
     server.close();
     process.exit(1);
   }
-  if (DRY_RUN) {
-    console.log(`GATE: DRY RUN — would invoke agent: ${AGENT_CMD_EFFECTIVE}`);
-    console.log(`GATE: DRY RUN — with SHIPGATE_FAILURE_FILE=${resolvePath('KANE_FAILURE.md')} SHIPGATE_ATTEMPT=${attempt + 1}`);
-    server.close();
-    process.exit(1);
-  }
   console.log(`GATE: invoking agent (attempt ${attempt + 1} of ${MAX_ATTEMPTS}): ${AGENT_CMD_EFFECTIVE}`);
   const snapshotRef = await gitSnapshotRef();
   const untrackedBefore = await gitUntracked();
@@ -267,7 +295,7 @@ for (;;) {
   const untrackedAfter = await gitUntracked();
   const changedFiles = await gitChangedFilesSince(snapshotRef, untrackedBefore, untrackedAfter);
   let diffLines = await gitChangedLinesSince(snapshotRef);
-  for (const f of untrackedAfter) if (!untrackedBefore.has(f)) diffLines += 1;
+  for (const f of untrackedAfter) if (!untrackedBefore.has(f)) diffLines += await gitNewFileLines(f);
   // Record the command as configured, not as executed: {failure} stays
   // unexpanded and repo-local paths stay relative, so the public history
   // carries no machine-specific paths. The executed command is unchanged.
